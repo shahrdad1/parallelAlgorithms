@@ -1,0 +1,299 @@
+
+Cancel the current command:	ctrl + g
+
+
+	**********
+	Navigating
+	**********
+
+Left:			ctrl + b
+
+Right:			ctrl + f
+
+Up:			ctrl + p
+
+Down:			ctrl + n
+
+--------------------------------
+
+Home:			ctrl + a
+
+End:			ctrl + e
+
+Page up:		alt + v
+
+Page down:		ctrl + v
+
+--------------------------------
+
+Go to line:		alt + g g
+
+--------------------------------
+
+Previous Sentence: 	alt + a
+
+Next Sentence:		alt + e
+
+Top of Buffer:		alt + - <
+
+End of Buffer:		alt + - >
+
+
+
+	*******
+	Editing
+	*******
+
+Delete a character:			ctrl + d
+
+Delete rest of line:			ctrl + k
+
+Undo:					ctrl + x u
+
+undo all changes since last save:	alt + x revert-buffer (Press Enter)
+
+Recover text from an autosave-file:	alt + x recover-file (Press Enter)
+
+if you edited several files:		alt + x recover-session (Press Enter)
+
+
+	********
+	Marking
+	********
+
+
+Set beginning mark:			ctrl + Sp
+
+
+Deactivate marking (stop highlighting):	ctrl + Sp
+
+
+"kill" (delete) the marked region region: ctrl + W
+
+
+Select All:				ctrl + h
+
+
+
+
+
+
+	**************************
+	copy / Cut / paste (yank)
+	**************************
+
+
+Mark and Copy:
+
+--------ctrl + Sp ---------------------
+---------------------------------------
+------------------------alt + w ------- 
+
+
+
+
+
+
+Mark and Cut:
+
+--------ctrl + Sp ---------------------
+---------------------------------------
+------------------------ctrl + w ------- 
+
+
+
+
+Paste (Yank):		ctrl + y
+
+
+
+	******
+	Search
+	******
+
+
+For 1st and next occurance:	ctrl + s
+
+Search backward:		ctrl + r
+
+Cancel search command:		ESC
+
+
+
+
+
+	*************
+	Query-replace
+	*************
+
+Suppose you want to change all occurences of XX to YY:
+
+
+Query:	alt + %
+	
+	Query replace:  		(enter XX press Enter)
+
+	Query replace: XX with: 	(enter YY press Enter)
+
+	'!' Replace all
+
+	'y' Replace current match
+
+	'n' Don't replace and find next match
+
+	'q' or RETURN Exit without replacing
+
+	'"' Replace this match and exit
+
+	',' replace and pause (resume with Space or y)
+
+	'^' back to previous match
+
+
+
+
+
+***************************************
+Search/Replace with regular expressions
+***************************************
+
+Characters to use in regular expressions:
+
+	'^' beginning of line
+
+	'$' end of line
+
+	'.' single char
+
+	'.*' group or null of chars
+
+	'\<' beginning of a word
+
+	'\>' end of a word
+
+	'[]' every char inside the backets (for example [a-z] means every small letter)
+
+
+search for regular expression forward:		alt crl + s (press Enter) 
+
+search for regular expression backward: 	alt crl + r (press Enter) 
+
+incremental search:				alt crl + s 
+
+repeat incremental search:			crl + s 
+
+incremental search backwards			alt crl + r 
+
+repeat backwards				Ctrl + r 
+
+query-replace-regexp search and replace		alt + x 
+
+
+
+
+
+
+
+
+
+		*************
+		Buffer Stuff
+		*************
+
+Visit (Open) a file in new Buffer: 	ctrl + x ctrl + f
+
+
+Save the Buffer to file: 		ctrl + x ctrl + s
+
+
+Save all Buffers: 			ctrl + x s
+
+
+Kill (close) a buffer without saving:	ctrl + x k
+
+
+create new Buffer / switch to a Buffer: ctrl + x b
+
+
+List name of Buffers: 			ctrl + x ctrl + b
+
+
+list-directory: 			ctrl + x ctrl + d
+
+
+find-file:				ctrl + x ctrl + f
+
+
+append-to-buffer:			ctrl + x a
+
+
+dired:					ctrl + x d
+			
+Buffer compare:				alt + x diff
+
+	
+
+		*************
+		Window Stuff
+		*************
+
+save-buffers-kill-emacs:	ctrl + x ctrl + c
+
+Split Vertically(Horizentally?)	ctrl + x 2
+
+Switch to other window:		ctrl + x o
+
+delete current window:		ctrl + x 0
+
+widen:				ctrl + x w
+
+shrink-window:			alt + x shrink-window
+
+shrink-window-horizontally:	ctrl + x {
+
+enlarge-window-horizontally:	ctrl + x }
+
+enlarge-window:			ctrl + x ^
+
+make new frame:			ctrl + x 5
+
+change to other frame		ctrl + x 5 o
+
+close this frame:		ctrl + x 5 0
+
+kill buffer and window		ctrl + x 4 0
+
+
+
+
+
+
+
+
+
+		******	
+		Region
+		******
+
+kill-region:			ctrl + w
+
+
+downcase-region			ctrl + x ctrl + l
+
+
+upcase-region			ctrl + x ctrl + u
+
+
+narrow-to-region:		ctrl + x n
+
+
+
+
+
+
+
+
+
+
+
+

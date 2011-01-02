@@ -1,0 +1,256 @@
+Node {52,0,[]} popped from the queue.
+Parent 52 is less than all its chldren []
+Node {52,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {52,0,[]} have decreasing ranks.
+Node {40,3,
+      [{41,2,[{51,1,[{73,0,[]}]},{66,0,[]}]},{68,1,[{77,0,[]}]},{70,0,[]}]} popped from the queue.
+Node {40,3,
+      [{41,2,[{51,1,[{73,0,[]}]},{66,0,[]}]},{68,1,[{77,0,[]}]},{70,0,[]}]} is less than all its children.
+?assertEqual(1,2)
+?assertEqual(0,1)
+Children of node {40,3,
+                  [{41,2,[{51,1,[{73,0,[]}]},{66,0,[]}]},
+                   {68,1,[{77,0,[]}]},
+                   {70,0,[]}]} have decreasing ranks.
+Node {41,2,[{51,1,[{73,0,[]}]},{66,0,[]}]} popped from the queue.
+Node {41,2,[{51,1,[{73,0,[]}]},{66,0,[]}]} is less than all its children.
+?assertEqual(0,1)
+Children of node {41,2,[{51,1,[{73,0,[]}]},{66,0,[]}]} have decreasing ranks.
+Node {68,1,[{77,0,[]}]} popped from the queue.
+Node {68,1,[{77,0,[]}]} is less than all its children.
+Children of node {68,1,[{77,0,[]}]} have decreasing ranks.
+Node {70,0,[]} popped from the queue.
+Parent 70 is less than all its chldren []
+Node {70,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {70,0,[]} have decreasing ranks.
+Node {51,1,[{73,0,[]}]} popped from the queue.
+Node {51,1,[{73,0,[]}]} is less than all its children.
+Children of node {51,1,[{73,0,[]}]} have decreasing ranks.
+Node {66,0,[]} popped from the queue.
+Parent 66 is less than all its chldren []
+Node {66,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {66,0,[]} have decreasing ranks.
+Node {77,0,[]} popped from the queue.
+Parent 77 is less than all its chldren []
+Node {77,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {77,0,[]} have decreasing ranks.
+Node {73,0,[]} popped from the queue.
+Parent 73 is less than all its chldren []
+Node {73,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {73,0,[]} have decreasing ranks.
+Node {3,5,
+      [{22,4,
+        [{36,3,
+          [{56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]},
+           {48,1,[{54,0,[]}]},
+           {43,0,[]}]},
+         {90,2,[{111,1,[{117,0,[]}]},{119,0,[]}]},
+         {39,1,[{103,0,[]}]},
+         {100,0,[]}]},
+       {12,3,
+        [{23,2,[{24,1,[{33,0,[]}]},{96,0,[]}]},{19,1,[{27,0,[]}]},{53,0,[]}]},
+       {16,2,[{28,1,[{32,0,[]}]},{44,0,[]}]},
+       {50,1,[{89,0,[]}]},
+       {79,0,[]}]} popped from the queue.
+Node {3,5,
+      [{22,4,
+        [{36,3,
+          [{56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]},
+           {48,1,[{54,0,[]}]},
+           {43,0,[]}]},
+         {90,2,[{111,1,[{117,0,[]}]},{119,0,[]}]},
+         {39,1,[{103,0,[]}]},
+         {100,0,[]}]},
+       {12,3,
+        [{23,2,[{24,1,[{33,0,[]}]},{96,0,[]}]},{19,1,[{27,0,[]}]},{53,0,[]}]},
+       {16,2,[{28,1,[{32,0,[]}]},{44,0,[]}]},
+       {50,1,[{89,0,[]}]},
+       {79,0,[]}]} is less than all its children.
+?assertEqual(3,4)
+?assertEqual(2,3)
+?assertEqual(1,2)
+?assertEqual(0,1)
+Children of node {3,5,
+                  [{22,4,
+                    [{36,3,
+                      [{56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]},
+                       {48,1,[{54,0,[]}]},
+                       {43,0,[]}]},
+                     {90,2,[{111,1,[{117,0,[]}]},{119,0,[]}]},
+                     {39,1,[{103,0,[]}]},
+                     {100,0,[]}]},
+                   {12,3,
+                    [{23,2,[{24,1,[{33,0,[]}]},{96,0,[]}]},
+                     {19,1,[{27,0,[]}]},
+                     {53,0,[]}]},
+                   {16,2,[{28,1,[{32,0,[]}]},{44,0,[]}]},
+                   {50,1,[{89,0,[]}]},
+                   {79,0,[]}]} have decreasing ranks.
+Node {22,4,
+      [{36,3,
+        [{56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]},{48,1,[{54,0,[]}]},{43,0,[]}]},
+       {90,2,[{111,1,[{117,0,[]}]},{119,0,[]}]},
+       {39,1,[{103,0,[]}]},
+       {100,0,[]}]} popped from the queue.
+Node {22,4,
+      [{36,3,
+        [{56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]},{48,1,[{54,0,[]}]},{43,0,[]}]},
+       {90,2,[{111,1,[{117,0,[]}]},{119,0,[]}]},
+       {39,1,[{103,0,[]}]},
+       {100,0,[]}]} is less than all its children.
+?assertEqual(2,3)
+?assertEqual(1,2)
+?assertEqual(0,1)
+Children of node {22,4,
+                  [{36,3,
+                    [{56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]},
+                     {48,1,[{54,0,[]}]},
+                     {43,0,[]}]},
+                   {90,2,[{111,1,[{117,0,[]}]},{119,0,[]}]},
+                   {39,1,[{103,0,[]}]},
+                   {100,0,[]}]} have decreasing ranks.
+Node {12,3,
+      [{23,2,[{24,1,[{33,0,[]}]},{96,0,[]}]},{19,1,[{27,0,[]}]},{53,0,[]}]} popped from the queue.
+Node {12,3,
+      [{23,2,[{24,1,[{33,0,[]}]},{96,0,[]}]},{19,1,[{27,0,[]}]},{53,0,[]}]} is less than all its children.
+?assertEqual(1,2)
+?assertEqual(0,1)
+Children of node {12,3,
+                  [{23,2,[{24,1,[{33,0,[]}]},{96,0,[]}]},
+                   {19,1,[{27,0,[]}]},
+                   {53,0,[]}]} have decreasing ranks.
+Node {16,2,[{28,1,[{32,0,[]}]},{44,0,[]}]} popped from the queue.
+Node {16,2,[{28,1,[{32,0,[]}]},{44,0,[]}]} is less than all its children.
+?assertEqual(0,1)
+Children of node {16,2,[{28,1,[{32,0,[]}]},{44,0,[]}]} have decreasing ranks.
+Node {50,1,[{89,0,[]}]} popped from the queue.
+Node {50,1,[{89,0,[]}]} is less than all its children.
+Children of node {50,1,[{89,0,[]}]} have decreasing ranks.
+Node {79,0,[]} popped from the queue.
+Parent 79 is less than all its chldren []
+Node {79,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {79,0,[]} have decreasing ranks.
+Node {36,3,
+      [{56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]},{48,1,[{54,0,[]}]},{43,0,[]}]} popped from the queue.
+Node {36,3,
+      [{56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]},{48,1,[{54,0,[]}]},{43,0,[]}]} is less than all its children.
+?assertEqual(1,2)
+?assertEqual(0,1)
+Children of node {36,3,
+                  [{56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]},
+                   {48,1,[{54,0,[]}]},
+                   {43,0,[]}]} have decreasing ranks.
+Node {90,2,[{111,1,[{117,0,[]}]},{119,0,[]}]} popped from the queue.
+Node {90,2,[{111,1,[{117,0,[]}]},{119,0,[]}]} is less than all its children.
+?assertEqual(0,1)
+Children of node {90,2,[{111,1,[{117,0,[]}]},{119,0,[]}]} have decreasing ranks.
+Node {39,1,[{103,0,[]}]} popped from the queue.
+Node {39,1,[{103,0,[]}]} is less than all its children.
+Children of node {39,1,[{103,0,[]}]} have decreasing ranks.
+Node {100,0,[]} popped from the queue.
+Parent 100 is less than all its chldren []
+Node {100,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {100,0,[]} have decreasing ranks.
+Node {23,2,[{24,1,[{33,0,[]}]},{96,0,[]}]} popped from the queue.
+Node {23,2,[{24,1,[{33,0,[]}]},{96,0,[]}]} is less than all its children.
+?assertEqual(0,1)
+Children of node {23,2,[{24,1,[{33,0,[]}]},{96,0,[]}]} have decreasing ranks.
+Node {19,1,[{27,0,[]}]} popped from the queue.
+Node {19,1,[{27,0,[]}]} is less than all its children.
+Children of node {19,1,[{27,0,[]}]} have decreasing ranks.
+Node {53,0,[]} popped from the queue.
+Parent 53 is less than all its chldren []
+Node {53,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {53,0,[]} have decreasing ranks.
+Node {28,1,[{32,0,[]}]} popped from the queue.
+Node {28,1,[{32,0,[]}]} is less than all its children.
+Children of node {28,1,[{32,0,[]}]} have decreasing ranks.
+Node {44,0,[]} popped from the queue.
+Parent 44 is less than all its chldren []
+Node {44,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {44,0,[]} have decreasing ranks.
+Node {89,0,[]} popped from the queue.
+Parent 89 is less than all its chldren []
+Node {89,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {89,0,[]} have decreasing ranks.
+Node {56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]} popped from the queue.
+Node {56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]} is less than all its children.
+?assertEqual(0,1)
+Children of node {56,2,[{78,1,[{105,0,[]}]},{64,0,[]}]} have decreasing ranks.
+Node {48,1,[{54,0,[]}]} popped from the queue.
+Node {48,1,[{54,0,[]}]} is less than all its children.
+Children of node {48,1,[{54,0,[]}]} have decreasing ranks.
+Node {43,0,[]} popped from the queue.
+Parent 43 is less than all its chldren []
+Node {43,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {43,0,[]} have decreasing ranks.
+Node {111,1,[{117,0,[]}]} popped from the queue.
+Node {111,1,[{117,0,[]}]} is less than all its children.
+Children of node {111,1,[{117,0,[]}]} have decreasing ranks.
+Node {119,0,[]} popped from the queue.
+Parent 119 is less than all its chldren []
+Node {119,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {119,0,[]} have decreasing ranks.
+Node {103,0,[]} popped from the queue.
+Parent 103 is less than all its chldren []
+Node {103,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {103,0,[]} have decreasing ranks.
+Node {24,1,[{33,0,[]}]} popped from the queue.
+Node {24,1,[{33,0,[]}]} is less than all its children.
+Children of node {24,1,[{33,0,[]}]} have decreasing ranks.
+Node {96,0,[]} popped from the queue.
+Parent 96 is less than all its chldren []
+Node {96,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {96,0,[]} have decreasing ranks.
+Node {27,0,[]} popped from the queue.
+Parent 27 is less than all its chldren []
+Node {27,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {27,0,[]} have decreasing ranks.
+Node {32,0,[]} popped from the queue.
+Parent 32 is less than all its chldren []
+Node {32,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {32,0,[]} have decreasing ranks.
+Node {78,1,[{105,0,[]}]} popped from the queue.
+Node {78,1,[{105,0,[]}]} is less than all its children.
+Children of node {78,1,[{105,0,[]}]} have decreasing ranks.
+Node {64,0,[]} popped from the queue.
+Parent 64 is less than all its chldren []
+Node {64,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {64,0,[]} have decreasing ranks.
+Node {54,0,[]} popped from the queue.
+Parent 54 is less than all its chldren []
+Node {54,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {54,0,[]} have decreasing ranks.
+Node {117,0,[]} popped from the queue.
+Parent 117 is less than all its chldren []
+Node {117,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {117,0,[]} have decreasing ranks.
+Node {33,0,[]} popped from the queue.
+Parent 33 is less than all its chldren []
+Node {33,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {33,0,[]} have decreasing ranks.
+Node {105,0,[]} popped from the queue.
+Parent 105 is less than all its chldren []
+Node {105,0,[]} is less than all its children.
+chldren [] has decreasing ranks. 
+Children of node {105,0,[]} have decreasing ranks.

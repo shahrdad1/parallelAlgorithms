@@ -1,0 +1,1374 @@
+					-------------------------------
+					-------- Make explained -------
+					-------------------------------
+
+
+
+
+************
+Basic Syntax 
+************
+
+Essentially a makefile contains a set of rules used to build an application. The first
+rule seen by make is used as the default rule. A rule consists of three parts: the target,
+its prerequisites, and the command(s) to perform:
+
+	target1 target2 target3 : prerequisite1 prerequisite2
+        	command1
+        	command2
+        	command3
+
+
+Important Notes:
+----------------
+
+1_ Each command MUST start with a tab character.
+
+  This (obscure) syntax tells make that the characters that follow the tab are to be passed to a subshell for execution. If you
+  accidentally insert a tab as the first character of a noncommand line, make will interpret the following text as a 
+  command under most circumstances. If you're lucky and your errant tab character is recognized as a syntax error you will 
+  receive the message:
+
+    $ make
+    Makefile:6: *** commands commence before first target.  Stop.
+
+2_ The prerequisites or dependents are those files that must exist before the target can be successfully created. 
+   and the commands are those shell commands that will create the target from the prerequisites.
+
+3_ If you want 'make' ignores the result of the command, then start the command with '-'. Like
+
+	target1 target2 target3 : prerequisite1 prerequisite2
+		-command1
+		-command2
+		-command3
+
+4_ Each command line is passed to the shell and is executed in its own subshell. Therefore you must add a '\' at 
+   the end of each command so that all script commands are on one logical line and are all passed together to a single
+   invocation of the shell for execution. Like:
+
+	target1 target2 target3 : prerequisite1 prerequisite2
+        	command1\
+        	command2\
+        	command3\
+
+5_ If any of the commands generates an error, the building of the target is terminated and make exits.
+   However if a command generates an error the subsequent commands in that rule continues running
+   untill all the commands of that rule runs. In other words make doesn't check if each command
+   succeeds before running the next command.
+
+   If it is very important that next commands executes only if the previous one is succeeded then
+   you should join the commands with '&&'. Like: 
+ 
+
+	target1 target2 target3 : prerequisite1 prerequisite2
+        	command1 &&\
+        	command2 &&\
+        	command3 &&\
+
+7_ Starting a command with '@' tells make NOT to print a command before executing the rule.
+
+Here is a rule for compiling a C file, foo.c, into an object file, foo.o:
+
+    foo.o: foo.c foo.h
+	gcc -c foo.c
+
+When make is asked to evaluate a rule, it begins by finding the files indicated by the
+prerequisites and target. If any of the prerequisites has an associated rule, make
+attempts to update those first. Next, the target file is considered. 
+If any prerequisite is newer than the target, the target is remade by executing the commands. 
+One file is considered newer than another if it has been modified more recently.
+
+
+
+
+**************
+Explicit Rules
+**************
+
+Most rules you will write are explicit rules that specify particular files as targets and
+prerequisites. A rule can have more than one target. This means that each target has
+the same set of prerequisites as the others. If the targets are out of date, the same set
+of actions will be performed to update each one. For instance:
+
+     vpath.o variable.o: make.h config.h getopt.h gettext.h dep.h
+     
+This indicates that both vpath.o and variable.o depend on the same set of C header files. 
+This line has the same effect as:
+
+     vpath.o: make.h config.h getopt.h gettext.h dep.h
+     variable.o: make.h config.h getopt.h gettext.h dep.h
+     
+The two targets are handled independently. If either object file is out of date with
+respect to any of its prerequisites (that is, any header file has a newer modification
+time than the object file), make will update the object file by executing the commands associated with the rule.
+
+A rule does not have to be defined all at once. Each time make sees a target file it
+adds the target and prerequisites to the dependency graph. If a target has already
+been seen and exists in the graph, any additional prerequisites are appended to the
+target file entry in make's dependency graph. In the simple case, this is useful for
+breaking long lines naturally to improve the readability of the makefile:
+
+
+     vpath.o: vpath.c make.h config.h getopt.h gettext.h dep.h
+
+     vpath.o: filedef.h hash.h job.h commands.h variable.h vpath.h
+
+     
+In more complex cases, the prerequisite list can be composed of files that are managed very differently:
+
+
+     # Make sure lexer.c is created before vpath.c is compiled.
+     vpath.o: lexer.c
+     ...
+     # Compile vpath.c with special flags.
+     vpath.o: vpath.c
+             $(COMPILE.c) $(RULE_FLAGS) $(OUTPUT_OPTION) $<
+     ...
+     # Include dependencies generated by a program.
+     include auto-generated-dependencies.d
+
+     
+The first rule says that the vpath.o target must be updated whenever lexer.c is
+updated (perhaps because generating lexer.c has other side effects). The rule also
+works to ensure that a prerequisite is always updated before the target is updated.
+(Notice the bidirectional nature of rules. In the forward direction the rule says that
+if the lexer.c has been updated, perform the action to update vpath.o. In the back-
+ward direction, the rule says that if we need to make or use vpath.o ensure that
+lexer.c is up to date first.) This rule might be placed near the rules for managing
+lexer.c so developers are reminded of this subtle relationship. Later, the compilation
+rule for vpath.o is placed among other compilation rules. The command for this rule
+uses three make variables. You'll be seeing a lot of these, but for now you just need to
+know that a variable is either a dollar sign followed by a single character or a dollar
+sign followed by a word in parentheses.
+
+
+
+
+*********
+Wildcards
+*********
+
+make's wildcards are identical to the Bourne shell's:
+
+		 ~, *, ?, [...], and [^...].
+
+A question mark represents any single character, and [...] represents a
+character class. To select the opposite (negated) character class use [^...].
+In addition, the tilde (~) character can be used to represent the current user's home
+directory. A tilde followed by a user name represents that user's home directory.
+Wildcards are automatically expanded by make whenever a wildcard appears in a tar-
+get, prerequisite, or command script context. In other contexts, wildcards can be
+expanded explicitly by calling a function. Wildcards can be very useful for creating
+more adaptable makefiles. For instance, instead of listing all the files in a program
+explicitly, you can use wildcards:*
+
+     		prog: *.c
+             		$(CC) -o $@ $^
+
+
+
+**************
+Phony Targets
+**************
+
+It is often useful for a target to be just a label representing a command script. For instance:
+
+clean:
+       rm -f *.o lexer.c
+
+Phony targets will always be executed (always out of date) because the commands associated
+with the rule (rm -f *.o lexer.c) do not create the target name.
+
+'make' cannot distinguish between a file target and phony target. If by chance the name of a 
+phony target exists as a file, make will associate the file with the phony target name in its dependency graph. 
+
+GNU make includes a special target, .PHONY, to tell make that a target is not a real file. 
+Any target can be declared phony by including it as a prerequisite of .PHONY:
+
+     .PHONY: clean
+
+     clean:
+	rm -f *.o lexer.c
+
+If a phony target is a prerequisite of a real file since the phony is always out of date 
+it will always cause the target file to be remade:
+
+
+    $(Program): build_msg $(OBJECTS) $(BUILTINS_DEP) $(LIBDEP)
+
+            $(RM) $@
+
+            $(CC) $(LDFLAGS) -o $(Program) $(OBJECTS) $(LIBS)
+
+            ls -l $(Program)
+
+            size $(Program)
+
+    .PHONY: build_msg
+
+    build_msg:
+
+            @printf "#\n# Building $(Program)\n#\n"
+
+
+
+Because the printf is in a phony target, the message is printed immediately before
+any prerequisites are updated. If the build message were instead placed as the first
+command of the $(Program) command script, then it would be executed after all
+compilation and dependency generation. It is important to note that because phony
+targets are always out of date, the phony build_msg target causes $(Program) to be
+regenerated even when it is not out of date. 
+
+Standard Phony targets:
+
+	all          Perform all tasks to build the application
+
+	install      Create an installation of the application from the compiled binaries
+
+	clean        Delete the binary files generated from sources
+
+	distclean    Delete all the generated files that were not in the original source distribution
+
+	TAGS         Create a tags table for use by editors
+
+	info         Create GNU info files from their Texinfo sources
+
+	check        Run any tests associated with this application
+
+
+
+
+
+*************
+Empty Targets
+*************
+
+The idea here is to use an empty file to mark last time specefic command(s) is executed:
+
+
+	print: *.[hc]
+
+		<<specefic command>> $?
+
+        	touch $@
+
+
+
+
+This is a rule to run <<specefic command>> (like ls) on all the files that have changed ($?) 
+since the last time make executed the <<specefic command>>.
+
+
+
+
+
+
+***************
+VPATH and vpath
+***************
+
+The VPATH variable consists of a list of directories to search when make needs a file.
+The list will be searched for targets as well as prerequisites, but not for files men-
+tioned in command scripts. The list of directories can be separated by spaces or
+colons on Unix and separated by spaces or semicolons on Windows. 
+
+
+	VPATH = src include 
+
+
+The 'make' will search each directory for any file it needs. If a file of
+the same name exists in multiple places in the VPATH list, make grabs the first one.
+Sometimes this can be a problem.
+
+The vpath directive is a more precise way to achieve our goals. The syntax of this directive is:
+
+    vpath pattern directory-list
+
+So our previous VPATH use can be rewritten as:
+
+	vpath %.erl src
+	vpath %.yrl include
+
+
+              
+**************
+Pattern Rules:
+**************
+
+The idea here is NOT to hardcode any filename as a target or prerequisit:
+'make' should match the file name (of the file it wants to build) against the targets 
+(of all the rules within Makefile) using file name's prefix and/or suffix to find the proper rule.
+
+Pattern rule is a rule whose target is not a hardcoded filename.
+
+This allows make to simplify rule creation by recognizing common filename
+patterns and providing built-in rules for processing them.
+
+A pattern rule looks like the normal rule except the stem of the file 
+(the portion before the suffix) is represented by a % character.
+
+The percent character in a pattern rule is roughly equivalent to * in a Unix shell. It
+represents any number of any character. The percent character can be placed
+anywhere within the pattern but can occur only once.
+
+
+Remember the form of a Normal rule:
+
+
+target1 target2 target3: prerequisite1 prerequisite2
+	command1
+	command2
+	command3
+
+
+Where 'target' and 'prerequisite' are name of a specefic files. For instance:
+
+count_words.o: count_words.c counter.h
+	gcc -c $<
+
+
+Here is a pattern rule:
+
+
+Target-Pattern1 Target-Pattern2 Target-Pattern3: prereq-pattern1 prereq-pattern2 prereq-pattern3
+	command1
+	command2
+	command3
+
+
+Here "Target-Pattern" and prereq-pattern1 can be any String containing zero or one '%.
+For instance:
+
+%.o: %.c
+	command1
+	command2
+	...	
+
+
+or
+
+
+%.c include.%.h: %.l
+
+	command1
+	command2
+	...
+
+lib/%: lib/%.o
+
+	command1
+	command2
+	...
+
+
+A pattern can contain a prefix or a suffix, both or none of them.
+
+
+How it works:
+
+Assume 'make' has a target (filename) at hand to build:
+
+	1_ 'make' searches for a pattern rule to apply (I.e. To build a target at hand. Assume its a file with a name: Prefix.XXX.Suffix)
+
+	2_ 'make' first looks for a matching pattern rule target.
+
+	I.e. it searches through:
+
+		Target-Pattern11 Target-Pattern12 Target-Pattern13 ...
+			....		
+			
+
+		Target-Pattern21 Target-Pattern22 Target-Pattern23 ...
+			....		
+			
+
+		Target-Pattern31 Target-Pattern32 Target-Pattern33 ...
+			....		
+			
+		...
+
+
+	inside the whole 'Makefile' to find a match
+
+	3_  'make' matches the target ('Prefix.XXX.Suffix') with a Target-Pattern If the Target-Pattern starts with 
+    	'Prefix.' and ends with '.suffix'. 
+
+	Apperently in the case where the target (file name) doesn't have 'Prefix.' then 'make' matches the 
+	'XXX.Suffix' with a Target-Pattern with no 'prefix.' that ends with '.suffix'. 
+	The other case is similar.
+
+	If "Target-Pattern" contains characters other than '%', each character will match literally within a filename.
+
+	It is also possible to have a Target-Pattern containing only a percent character. The most
+	common use of this pattern is to build a Unix executable program.
+
+
+	4_ If target (filename) matches a Target-Pattern, the characters between the 'prefix' and 'suffix' 
+	are taken as the stem of the name (Here is XXX). 
+
+	5_ Next make looks at the prerequisites of the pattern rule (prereq-pattern1, ...) 
+	by substituting the stem into the prerequisite pattern. If the resulting filename exists or can be made 
+	by applying another rule,a match is made and the rule is applied. The stem word must contain at least one
+	character.
+
+
+Note that Target-pattern and prerequisite-pattern can include path. 
+
+
+For instance if make is asked to build the 'lib/bar.o' the stem is evaluated as ‘lib/bar’ in the following rule:
+
+%.o: %.c
+
+	command1
+	command2
+	...
+
+
+Whereas If make is asked to build 'lib/bar.o' then the stem is evaluated as ‘bar’ in the following rule.
+
+
+lib/%.o: lib/%.c
+
+	command1
+	command2
+	...
+
+
+'make' always selects the rule whose stem is shorter:
+
+
+If make is asked to build lib/bar.o and both lib/bar.c and lib/bar.f exist, then the 2nd rule will be 
+chosen since the stem for this rule (‘bar’)  is shorter than the stem for the first rule (‘lib/bar’). 
+
+But If lib/bar.c does not exist then the 2nd rule is not eligible and the first rule will be used, 
+even though the stem is longer.
+
+
+
+
+
+*********************
+Static Pattern Rules:
+*********************
+
+
+A static pattern rule is one that applies only to a specific list of targets.
+
+	$(OBJECTS): %.o: %.c
+		$(CC) -c $(CFLAGS) $< -o $@
+
+The only difference between this rule and an ordinary pattern rule is the initial
+$(OBJECTS): specification. 
+
+This limits the rule to the files whose name are listed in the $(OBJECTS) variable.
+This is very similar to a pattern rule. Each object file in $(OBJECTS) is matched against
+the pattern %.o and its stem is extracted. The stem is then substituted into the pattern
+%.c to yield the target’s prerequisite. If the target pattern does not exist, make
+issues a warning.
+
+
+
+
+
+
+
+************
+Suffix Rules
+************
+
+Suffix rules consist of one or two suffixes concatenated and used as a target:
+
+     .c.o:
+              $(COMPILE.c) $(OUTPUT_OPTION) $<
+
+This is a little confusing because the prerequisite suffix comes first and the target suf-
+fix second. This rule matches the same set of targets and prerequisites as:
+
+     %.o: %.c
+              $(COMPILE.c) $(OUTPUT_OPTION) $<
+              
+The suffix rule forms the stem of the file by removing the target suffix. It forms the
+prerequisite by replacing the target suffix with the prerequisite suffix. The suffix rule
+is recognized by make only if the two suffixes are in a list of known suffixes.
+The above suffix rule is known as a double-suffix rule since it contains two suffixes.
+There are also single-suffix rules. As you might imagine a single-suffix rule contains
+only one suffix, the suffix of the source file. These rules are used to create executa-
+bles since Unix executables do not have a suffix:
+
+     .p:
+            $(LINK.p) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
+This rule produces an executable image from a Pascal source file. This is completely
+analogous to the pattern rule:
+
+     %: %.p
+            $(LINK.p) $^ $(LOADLIBES) $(LDLIBS) -o $@
+            
+.SUFFIXES, is used to set the list of known suffixes. Here is the first part of the default .SUFFIXES
+definition:
+
+     .SUFFIXES: .out .a .ln .o .c .cc .C .cpp .p .f .F .r .y .l
+
+You can add your own suffixes by simply adding a .SUFFIXES rule to your makefile:
+
+     .SUFFIXES: .pdf .fo .html .xml
+
+There can be a single-suffix rule. The single-suffix rule contains
+only one suffix, the suffix of the source file. These rules are used to create executa-
+bles since Unix executables do not have a suffix:
+
+
+
+     .p:
+            $(LINK.p) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
+This is completely analogous to the pattern rule:
+
+    %: %.p
+            $(LINK.p) $^ $(LOADLIBES) $(LDLIBS) -o $@
+
+
+
+
+
+
+********************
+Automatic Variables
+********************
+
+Now its clear that no file name is hard coded when any of the pattern rules are used.
+The question is how we can access the matched file name inside the commands of the matched Rule?
+This is the idea behind Automatic variables.
+
+Automatic variables are set by make after a rule is matched. They provide access to
+elements from the target and prerequisite lists so you don’t have to explicitly specify
+any filenames. They are very useful for avoiding code duplication, but are critical
+when defining more general pattern rules.
+
+There are seven “core” automatic variables:
+
+$@ The filename representing the target.
+
+$% The filename element of an archive member specification.
+
+$< The filename of the first prerequisite.
+
+$? The names of all prerequisites that are newer than the target, separated by spaces.
+
+$^ The filenames of all the prerequisites, separated by spaces. This list has duplicate
+filenames removed since for most uses, such as compiling, copying, etc.,
+duplicates are not wanted.
+
+$+ Similar to $^, this is the names of all the prerequisites separated by spaces,
+except that $+ includes duplicates. This variable was created for specific situations
+such as arguments to linkers where duplicate values have meaning.
+
+$* The stem of the target filename. A stem is typically a filename without its suffix.
+
+
+
+
+
+
+**********
+Variables
+**********
+
+Automatic Variables are onle one kind of variables. The following is how we define a variable:
+
+1_Almost Any charachter (even space) allowed in the name of the varables. Therefore becarefull 
+  with leading or trailing space in 'ifeq' and 'ifneq' (always put variable name in single or double qoute).
+  Only characters actually disallowed in a variable name are :, #, and =.
+
+2_Variables are case-sensitive.
+
+3_To get the value of a variable, enclose the variable name in $( ). As a special case, single-letter variable
+  names can omit the parentheses and simply use $letter. This is why the automatic
+  variables can be written without the parentheses.
+  Variables can also be expanded using curly braces as in ${CC} and you will often see this form, particularly in older makefiles.
+
+4_Variables representing constants a user might want to customize on the command
+  line or in the environment are written in all uppercase, by convention. Words are
+  separated by underscores. Variables that appear only in the makefile are all lowercase
+  with words separated by underscores.
+
+
+5_The value of a variable consists of all the words to the right of the assignment symbol
+   with leading space trimmed. Trailing spaces are not trimmed. This can occasionally
+   cause trouble, for instance, if the trailing whitespace is included in the variable
+   and subsequently used in a command script.
+
+
+
+
+
+
+*************************
+simply expanded variable
+*************************
+
+A simply expanded variable (or a simple variable) is defined using the := assignment operator:
+
+	MAKE_DEPEND := $(CC) -M
+
+Any make variable references in the righthand side of := are expanded and the resulting text saved as 
+the value of the variable. This behavior is identical to most programming and scripting languages.
+
+
+For instance, the normal expansion of this variable would yield:
+
+		gcc -M
+
+However, if CC above had not yet been set, then the value of the above assignment would be:
+
+		<space>-M
+
+When the variable reference is collapsed to nothing, make does not rescan the value and trim blanks. 
+The blanks are left intact.
+
+It is not an error for a variable to have no definition. In fact, this is extremely
+useful. Most of the implicit commands include undefined variables that serve as
+place holders for user customizations: If the user does not customize a variable it collapses to nothing.
+
+
+
+
+
+
+
+***************************************************
+Recursively expanded variable (recursive variable)
+***************************************************
+
+A recursively expanded variable  is defined using the = assignment operator:
+
+	MAKE_DEPEND = $(CC) -M
+
+
+Its righthand side is simply stored as the value of the variable without evaluating or expanding it in any
+way. Instead, the expansion is performed when the variable is used. 
+In other words: Each time the recursive variable is used, its righthand side is reevaluated.
+
+A better term for this variable might be lazily expanded variable, since the evaluation is deferred until it
+is actually used.
+
+This can cause “out of order" Assignments:
+
+	MAKE_DEPEND = $(CC) -M
+	...
+	# Some time later
+	CC = gcc
+
+
+Here the value of MAKE_DEPEND within a command script is gcc -M even though CC was undefined when MAKE_DEPEND was assigned.
+
+Imagine if a variable in the righthand side represented the execution of a program, say date. Each time the recursive variable was expanded
+the date program would be executed and each variable expansion would have a different value.
+
+
+
+
+
+
+****************************************
+conditional variable assignment operator
+****************************************
+
+The ?= operator is called the conditional variable assignment operator.
+This operator will perform the requested variable assignment only if the variable does not yet have a value:
+
+		# Put all generated files in the directory $(PROJECT_DIR)/out.
+		OUTPUT_DIR ?= $(PROJECT_DIR)/out
+
+Here we set the output directory variable, OUTPUT_DIR, only if it hasn’t been set earlier.
+
+
+
+
+
+
+**************************
+Append assignment operator
+**************************
+
+The other assignment operator, +=, is usually referred to as append.
+values on the righthand side of the assignment are appended to the variable without changing the
+original values in the variable.
+
++= was implemented specifically to allow adding text to a recursive variable and
+does the Right Thing™. This operator is particularly useful for collecting values into
+a variable incrementally. As an example to illustrate it:
+
+
+	recursive = $(recursive) new stuff
+
+This is an error because there’s no good way for make to handle it (infinite loop because of lazyness).
+Instead we should do this:
+
+	recursive += new stuff
+
+
+
+
+*****
+MACRO
+*****
+
+A macro is just another way of defining a variable in make, and one that can contain
+embedded newlines!
+
+	define create-jar
+	@echo Creating $@...
+	$(RM) $(TMP_JAR_DIR)
+	$(MKDIR) $(TMP_JAR_DIR)
+	$(CP) -r $^ $(TMP_JAR_DIR)
+	cd $(TMP_JAR_DIR) && $(JAR) $(JARFLAGS) $@ .
+	$(JAR) -ufm $@ $(MANIFEST)
+	$(RM) $(TMP_JAR_DIR)
+	endef
+
+(Command lines prefixed with an @ character are not echoed by make when the command is executed.Just output of that command shows up)
+
+The define directive is followed by the macro name and a newline. The body of the
+macro includes all the text upto the endef keyword, which must appear on a line by
+itself. 
+
+A macro created with define is expanded pretty much like any other variable,
+except that when it is used in the context of a command script, each line of the
+macro has a tab prepended to the line. An example use is:
+
+	$(UI_JAR): $(UI_CLASSES)
+		$(create-jar)
+
+
+
+
+
+
+
+*****************************
+Variable Expansion and Phases
+*****************************
+
+
+When make runs, it performs its job in two phases:
+
+In the first phase, make reads the makefile and any included makefiles. 
+At this time, variables and rules are loaded into make’s internal database and the dependency graph is created. 
+
+In this phase, When a recursive variable or define directive is processed by make, the lines in the
+variable or body of the macro are stored, including the newlines without being
+expanded. The very last newline of a macro definition is not stored as part of the
+macro. Otherwise, when the macro was expanded (2nd phase) an extra newline would be read by make.
+
+
+In the second phase, make analyzes the dependency graph and determines the targets that need to be
+updated, then executes command scripts to perform the required updates.
+
+In this phase, When a macro is expanded, the expanded text is then immediately scanned for further
+macro or variable references and those are expanded and so on, recursively. 
+If the macro is expanded in the context of an action, each line of the macro is inserted with a leading tab character.
+
+Here is the summary:
+
+	-------------------------------------------------------
+	Definition 	Expansion of a 		Expansion of b
+	-------------------------------------------------------
+
+	a = b 		Immediate 		Deferred
+
+	a ?= b 		Immediate 		Deferred
+
+	a := b 		Immediate 		Immediate
+
+	a += b 		Immediate 		Deferred or immediate (immediately if the lefthand side was originally defined using '=')
+
+	define a 	Immediate 		Deferred 
+	 b...
+	 b...
+	 b...
+	endef
+
+
+
+
+1st phase:
+----------
+
+1_ Within first phase, When a recursive variable or define directive is processed by make, the lines in the
+   variable or body of the macro are stored, including the newlines WITHOUT BEING EXPANDED. 
+
+  (The very last newline of a macro definition is not stored as part of the
+  macro. Otherwise, when the macro was expanded an extra newline would be read by make.)
+
+
+2nd phase:
+----------
+
+1_ During the second phase When a macro is expanded, the expanded text is then immediately scanned for further
+   macro or variable references and those are expanded and so on, recursively. 
+
+2_ If the macro is expanded in the context of an action, each line of the macro is inserted
+   with a leading tab character.
+
+
+
+-----
+Note: 
+-----
+	Always define variables and macros before they are used. 
+	In particular, Variable used in a target or prerequisite MUST be defined before its use.
+
+
+An example will make all this clearer:
+
+
+We define three variables to hold the names of the programs we use in our macro:
+
+	BIN := /usr/bin
+	PRINTF := $(BIN)/printf
+	DF := $(BIN)/df
+	AWK := $(BIN)/awk
+
+
+The four variable definitions are read and their righthand sides are immediately expanded
+because they are simple variables. Because BIN is defined before the others, its value
+can be plugged into their values.
+
+
+Next, we define the macro:
+
+	define free-space
+	 $(PRINTF) "Free disk space "
+	 $(DF) . | $(AWK) 'NR = = 2 { print $$4 }'
+	endef
+
+
+The define directive is followed by a variable name (free-space) that is immediately expanded
+(however in this case, no expansion is necessary). 
+The body of the macro is read and stored unexpanded.
+
+
+Finally, we use our macro in a rule.
+
+	OUTPUT_DIR := /tmp
+
+	$(OUTPUT_DIR)/very_big_file:
+		$(free-space)
+
+
+
+When $(OUTPUT_DIR)/very_big_file is read:
+
+
+1st Phase:
+----------
+
+	1_ Variables used in the targets and prerequisites are IMMEDIATELY expanded:
+
+
+		/tmp/very_big_file:
+		 
+
+	2_ The Command lines are recognized by the leading tab character and are read and stored, but NOT EXPANDED.
+
+
+
+	Therefore the Makefile would be like the following:
+
+
+	OUTPUT_DIR := /tmp		===> Variable used in a target or prerequisite MUST be defined before its use.
+
+	$(OUTPUT_DIR)/very_big_file: 	===> Variables used in the targets and prerequisites are IMMEDIATELY EXPANDED.
+
+		$(free-space)		===> Command script is NOT EXPANDED until used.
+
+
+	define free-space		===> Macro variable name is IMMEDIATELY EXPANDED.
+
+	 $(PRINTF) "Free disk space "			===> Variable or Macro body are stored and are NOT EXPANDED until used.
+
+	 $(DF) . | $(AWK) 'NR = = 2 { print $$4 }'	===> variable or Macro body are stored and are NOT EXPANDED until used.
+
+	endef						===> Macro body is NOT EXPANDED until used.
+
+
+	BIN := /usr/bin			===> IMMEDIATELY EXPANDED.
+	PRINTF := $(BIN)/printf		===> IMMEDIATELY EXPANDED.
+	DF := $(BIN)/df			===> IMMEDIATELY EXPANDED.
+	AWK := $(BIN)/awk		===> IMMEDIATELY EXPANDED.
+
+
+
+
+	Expansion of the command script and the body of the macro are deferred until they are actualy used.
+	Therefore, the relative order in which they occur is immaterial to the execution of the makefile.
+
+	The important issue is that when $(OUTPUT_DIR)/very_big_file and the righthand sides
+	of PRINTF, DF, and AWK are expanded, their expansion happens immediately, so the
+	variables they refer to must be already defined.
+
+
+2nd Phase:
+
+----------
+
+1_ 'make' executes the actions for each rule (after doing analysis and ...) .
+
+    Here there is only one target '$(OUTPUT_DIR)/very_big_file' which has no prerequisite.
+   'make' starts executing the command '$(free-space)'.
+
+
+2_ 'macro' is expanded, the expanded text is then immediately scanned for further
+   macro or variable references and those are expanded and so on, recursively. 
+   If the macro is expanded in the context of an action, each line of the macro is inserted with a leading tab character.
+
+
+  So make expands this as if the programmer had written:
+
+	/tmp/very_big_file:
+
+		/usr/bin/printf "Free disk space "
+		/usr/bin/df . | /usr/bin/awk 'NR = = 2 { print $$4 }'
+
+Once all variables are expanded, it begins executing commands one at a time.
+
+
+Note1:
+------
+
+As explained earlier, the target $(OUTPUT_DIR)/very_big_file is expanded immediately. If the
+definition of the variable OUTPUT_DIR had followed the rule, the expansion of the target
+would have yielded ' /very_big_file'. Probably not what the user wanted.
+
+
+
+Note 2:
+-------
+if the definition of BIN had been moved after AWK, those three variables would have
+expanded to /printf, /df, and /awk because the use of := causes immediate evaluation
+of the righthand side of the assignment.
+we could avoid the problem for PRINTF, DF, and AWK by changing := to =, making them recursive variables:
+
+
+	PRINTF := $(BIN)/printf		===> IMMEDIATELY EXPANDED.
+	DF := $(BIN)/df			===> IMMEDIATELY EXPANDED.
+	AWK := $(BIN)/awk		===> IMMEDIATELY EXPANDED.
+	BIN = /usr/bin			===> NOT EXPANDED until phase 2 when it is used.
+
+
+
+
+
+
+
+
+**************************************
+Target- and Pattern-Specific Variables
+**************************************
+
+
+These are variable definitions attached to a target that are valid only during the processing of
+that target and any of its prerequisites.
+
+For instance here particular file (gui.c) we are compiling needs an extra command-line
+option, -DUSE_NEW_MALLOC=1, that should not be provided to other compiles:
+
+	gui%.o: CPPFLAGS += -DUSE_NEW_MALLOC=1
+
+	gui%.o: gui.h
+		$(COMPILE.c) $(OUTPUT_OPTION) $<
+
+
+
+Adding the line 'gui%.o: CPPFLAGS += -DUSE_NEW_MALLOC=1' causes the '-DUSE_NEW_MALLOC=1'
+added to the list of compiler flags ('CPPFLAGS') used each time compiler is called to 
+build each 'guiXXX.o' file. It has no effect on any other files.
+When the gui.o target is finished,CPPFLAGS will revert to its original value.
+
+The general syntax for target-specific variables is:
+
+target...: variable = value
+target...: variable := value
+target...: variable += value
+target...: variable ?= value
+
+
+
+Note 1:
+-------
+The variable does not need to exist before the assignment.
+
+
+Note 2:
+-------
+The variable assignment is not actually performed until the processing of the target begins.
+So the righthand side of the assignment can itself be a value set in another target-specific variable.
+
+
+
+
+
+
+
+
+
+**************************
+Where Variables Come From
+**************************
+
+1_ makefile or a file included by the makefile.
+
+2_ Variables can be defined or redefined directly from the make command line:
+
+	$ make CFLAGS=-g CPPFLAGS='-DBSD -DDEBUG'
+
+3_ If the value of the variable (or heaven forbid, the variable itself) contains spaces, the
+   argument must be surrounded by quotes or the spaces must be escaped.
+
+
+   An assignment of a variable on the command line overrides any value from the
+   environment and any assignment in the makefile. 
+
+   Command-line assignments can set either simple or recursive variables by using := or =, respectively.
+
+   It is possible using the override directive to allow a makefile assignment to be used instead of a command-line assignment.
+
+		# Use big-endian objects or the program crashes!
+			override LDFLAGS = -EB	
+
+
+
+4_ All the variables from your environment are automatically defined as make variables when make starts.
+
+  You can cause environment variables to override makefile variables using the --environment-overrides (or -e) command-line
+  option.
+
+
+  When make is invoked recursively, some variables from the parent make are passed through the environment to the child make. 
+  By default, only those variables that originally came from the environment are exported to the child’s environment,
+  but any variable can be exported to the environment by using the export directive:
+
+	export CLASSPATH := $(HOME)/classes:$(PROJECT)/classes
+	SHELLOPTS = -x
+	export SHELLOPTS
+
+  You can cause all variables to be exported with: 
+	
+	export
+
+  You can also prevent an environment variable from being exported to the subprocess: 
+
+	unexport DISPLAY
+
+
+  Suppose you have a default output directory (OUTPUT_DIR) set in your makefile, but you want users to be able to 
+  override the default easily. Conditional assignment is perfect for this situation (PROJECT_DIR is an environment variable):
+
+
+	# Assume the output directory $(PROJECT_DIR)/out.
+	OUTPUT_DIR ?= $(PROJECT_DIR)/out
+
+	Here the assignment is performed only if OUTPUT_DIR has never been set.
+
+
+  Excessive use of environment variables makes your makefiles much less portable,In fact, I rarely use this feature for precisely that reason .
+
+
+5_ Finally, make creates automatic variables immediately before executing the command script of a rule.
+
+
+
+
+
+
+
+
+
+
+******************************************************
+Conditional Processing and Trailing Whitespace problem
+******************************************************
+
+Parts of a makefile can be omitted or selected while the makefile is being read using conditional processing directives:
+
+	# COMSPEC is defined only on Windows.
+	ifdef COMSPEC
+		PATH_SEP := ;
+		EXE_EXT := .exe
+	else
+		PATH_SEP := :
+		EXE_EXT :=
+	endif
+
+Note:
+-----
+
+The variable-name should NOT be surrounded by $( ) for the ifdef/ifndef test.
+
+The if-condition can be one of:
+
+	ifdef variable-name
+	ifndef variable-name
+	ifeq test
+	ifneq test
+
+The conditional processing directives can be used within:
+
+ _Macro definitions 
+
+ _Command scripts 
+
+ _Top level of makefiles
+
+
+For instance:
+
+
+
+	libGui.a: $(gui_objects)
+
+		$(AR) $(ARFLAGS) $@ $<
+
+	   ifdef RANLIB
+		$(RANLIB) $@
+	   endif
+
+
+Note:
+----
+
+If the enclosed commands didn’t begin with a tab, they would not be recognized as commands by make. 
+If the conditional directives had a leading tab, they would be misidentified as commands and passed to the subshell. 
+
+
+The ifeq and ifneq conditionals test if their arguments are equal or not equal.
+
+Whitespace in conditional processing can be tricky to handle. 
+For instance, when using the parenthesis form of the test, whitespace after the comma is ignored, but all
+other whitespace is CONSIDERED AS PART OF THE AREGUNMENT:
+
+
+	ifeq (a, a)
+			# These are equal
+	endif
+
+
+Whereas:
+
+
+	ifeq ( b, b )
+			# These are not equal - ' b' != 'b '
+	endif
+
+
+
+Personally, I stick with the quoted forms of equality:
+
+
+	ifeq "a" "a"
+		# These are equal
+	endif
+
+
+
+	ifeq 'b' 'b'
+		# So are these
+	endif
+
+
+Note that using single or double code only prevents trailing white spaces of the name of the arguments, 
+If the argument is the variable, the variable expansion contains unexpected whitespace.
+This can cause problems since the comparison includes all characters. To create more robust makefiles, use the strip function:
+
+	ifeq "$(strip $(OPTIONS))" "-d"
+           COMPILATION_FLAGS += -DDEBUG
+	endif
+
+
+
+
+
+
+
+
+
+************************
+include and Dependencies
+************************
+
+
+A makefile can include other files. This is most commonly done to place common
+make definitions in a make header file or to include automatically generated dependency
+information. The include directive is used like this:
+
+	include definitions.mk
+
+
+The directive can be given any number of files and shell wildcards and make variables
+are also allowed.
+
+When make encounters an include directive, it expands the wildcards and variable
+references, then tries to read the include file.
+
+An Example:
+
+We use the warning built-in function to print a simple message from make. Here is the makefile:
+
+	# Simple makefile including a generated file.
+
+	include foo.mk
+
+	$(warning Finished include)
+
+	foo.mk: bar.mk
+
+		m4 --define=FILENAME=$@ bar.mk > $@
+
+
+and here is bar.mk, the source for the included file:
+
+	# bar.mk - Report when I am being read.
+
+	$(warning Reading FILENAME)
+
+
+When run, we see:
+
+	$ make
+
+	Makefile:2: foo.mk: No such file or directory	===> make cannot find the include file 
+
+	Makefile:3: Finished include			===> make keeps reading and executing the makefile
+
+	m4 --define=FILENAME=foo.mk bar.mk > foo.mk	===> After completing the read, make will look for any rule to update
+							     the currently executing makefile or any of its include files. 
+							     'make' discovers this rule to create the include file and executs it.
+
+	foo.mk:2: Reading foo.mk			===> After executing the rule 'make' checks if the makefile 
+							      or any of its include files is updated. 
+							     'make' discovers 'foo.mk' is updated therefore
+							     make will clear its internal state and re-read the
+							     makefile, performing the whole analysis over again.
+	
+	Makefile:3: Finished include			===> make keeps reading and executing the makefile
+	
+	make: `foo.mk' is up to date.
+
+
+The main point here is make will also treat the makefile itself as a possible target: 
+after the entire makefile has been read, make will always look for a rule to remake the currently 
+executing makefile or any of its included files. If it finds one, make will process the rule, then check
+if the makefile or any of its included files has been updated. If so, make will clear its internal state and re-read the
+makefile, performing the whole analysis over again.
+
+If, after completing the process of reading, updating, and rereading, there are still include directives that
+have failed due to missing files, make terminates with an error status.
+
+Here is an example of an infinite loop based on this behavior:
+
+	.PHONY: dummy
+	makefile: dummy
+		touch $@
+
+
+When make executes this makefile, it sees that the makefile is out of date (because the
+.PHONY target, dummy, is out of date) so it executes the touch command, which
+updates the timestamp of the makefile. Then make rereads the file and discovers that
+the makefile is out of date....Well, you get the idea.
+
+if the argument to include is an absolute file reference, make reads that file. 
+If the file reference is relative, make first looks in its current working directory. 
+If make cannot find the file, it then proceeds to search through any directories you have 
+specified on the command line using the --include-dir (or -I) option. 
+After that, make searches a compiled search path similar to: /usr/local/include, /usr/gnu/include, /usr/include.
+
+
+If make cannot find the include file and it cannot create it using a rule, make exits with
+an error. If you want make to ignore include files it cannot load, add a leading dash to
+the include directive:
+
+	-include i-may-not-exist.mk
+
+It is worth noting that using an include directive before the first target in a makefile
+might change the default goal. That is, if the include file contains any targets at all
+the first of those targets will become the default goal for the makefile. This can be
+avoided by simply placing the desired default goal before the include (even without
+prerequisites or targets):
+
+
+	# Ensure all is the default goal.
+
+	all:
+
+	include support.mk
+
+	# Now that we have our variables defined, complete the all target.
+	all: $(programs)
+
+
+
+
+
+
+
+
+***********************
+Standard make Variables
+
+***********************
+
+MAKE_VERSION
+
+	This is the version number of GNU make.
+
+
+
+CURDIR
+	This variable contains the current working directory (cwd) of the executing make
+	process. This will be the same directory the make program was executed from unless the --directory (-C)
+	option is used. 
+
+
+MAKEFILE_LIST
+
+	This variable contains a list of each file make has read including the default
+	makefile and makefiles specified on the command line or through include directives.
+
+
+MAKECMDGOALS
+
+	The MAKECMDGOALS variable contains a list of all the targets specified on the command
+	line for the current execution of make. It does not include command-line options or variable assignments. 
+
+	For instance:
+
+		$ make -f- FOO=bar -k goal <<< 'goal:;# $(MAKECMDGOALS)'
+		# goal
+
+
+	The example uses the “trick” of telling make to read the makefile from the stdin
+	with the -f- (or --file) option. The stdin is redirected from a command-line
+	string using bash’s here string, “<<<”, syntax.* The makefile itself consists of the
+	default goal goal, while the command script is given on the same line by separating
+	the target from the command with a semicolon. The command script contains
+	the single line:
+
+		# $(MAKECMDGOALS)
+
+	MAKECMDGOALS is typically used when a target requires special handling.
+
+.VARIABLES
+
+	This contains a list of the names of all the variables defined in makefiles read so
+	far, with the exception of target-specific variables. The variable is read-only and
+	any assignment to it is ignored.
+
+	list:
+		@echo "$(.VARIABLES)" | tr ' ' '\015' | grep MAKEF
+
+	$ make
+	MAKEFLAGS
+	MAKEFILE_LIST
+	MAKEFILES
+

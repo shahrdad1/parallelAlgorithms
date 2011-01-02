@@ -1,0 +1,145 @@
+Floating point math happened. The float precision of the Erlang shell
+is very misleading.
+
+1> io:format("~.21g~n", [(math:pow(2,52) - 1) / math:pow(2,53)]).
+0.499999999999999888978
+ok
+2> io:format("~.21g~n", [((math:pow(2,52) - 1) / math:pow(2,53)) + 1/2]).
+0.999999999999999888978
+ok
+3> io:format("~.21g~n", [(math:pow(2,53) - 1) / math:pow(2,54)]).
+0.499999999999999944489
+ok
+4> io:format("~.21g~n", [((math:pow(2,53) - 1) / math:pow(2,54)) + 1/2]).
+1.00000000000000000000
+ok
+
+This is what you should expect from any language that uses floating point math.
+
+Python 2.5 (r25:51918, Sep 19 2006, 08:49:13)
+[GCC 4.0.1 (Apple Computer, Inc. build 5341)] on darwin
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from __future__ import division
+>>> (2**52 - 1) / (2**53)
+0.49999999999999989
+>>> (2**53 - 1) / (2**54)
+0.49999999999999994
+>>> ((2**52 - 1) / (2**53)) + (1/2)
+0.99999999999999989
+>>> ((2**53 - 1) / (2**54)) + (1/2)
+1.0
+
+You might want to read up on how IEEE-754 doubles (64-bit floating
+point) work. It's the de facto standard representation for a "float"
+type in most languages (except the ones where you can choose "float"
+or "double", where "float" is a 32-bit single).
+
+************************************************************************************************
+************************************************************************************************
+************************************************************************************************
+> > Why Erlang behaves like this?
+> >
+> > 1> trunc(1.3/0.1).
+> > 13
+> > 2> trunc(1.4/0.1).
+> > 13
+> > 3> trunc(1.5/0.1).
+> > 15
+> 
+> Unfortunately, this isn't an Erlang problem at all. Look at the  
+> output of this little C program on my machine:
+> 
+> wilt:/tmp rcameron$ cat floor.c
+> #include <math.h>
+> #include <stdio.h>
+> main() {
+>          printf("%f\n", floor(1.4/0.1));
+> }
+> wilt:/tmp rcameron$ gcc -o floor floor.c
+> wilt:/tmp rcameron$ ./floor
+> 13.000000
+> 
+> Computers have a nasty habit of doing things you might not  
+> intuitively expect with floating point operations. You sort of just  
+> have to accept that float operations are not exact, so the computation:
+> 
+> 1.4/0.1
+> 
+> actually produces a result in the range
+> 
+> 14.0000000000000 +/- epsilon
+> 
+> where epsilon is (very) small. Unfortunately, in your case, it's  
+> every so slightly negative, so
+> 
+> erlang:trunc(14.0000000000000 - Epsilon).
+> 
+> evaluates to 13.
+> 
+> > And which you think is the best way to manage this in order to  
+> > solve this kind of problems?
+> 
+> It depends very much what you're trying to do. What do these numbers  
+> represent in your application?
+
+************************************************************************************************
+************************************************************************************************
+************************************************************************************************
+
+Problem
+
+You need to round a floating-point number to an integer.
+[edit] Solution
+
+Use one of the functions round/1, ceiling/1, floor/1 and trunc/1. Note, the standard Erlang distribution does not come with either floor/1 or ceiling/1, but they can be easily implemented in terms of trunc/1
+
+floor(X) when X < 0 ->
+    T = trunc(X),
+    case X - T == 0 of
+        true -> T;
+        false -> T - 1
+    end;
+floor(X) -> 
+    trunc(X).
+
+
+ceiling(X) when X < 0 ->
+    trunc(X);
+ceiling(X) ->
+    T = trunc(X),
+    case X - T == 0 of
+        true -> T;
+        false -> T + 1
+    end.
+
+
+1> floor(-4.3).
+-5
+2> ceiling(-4.3).
+-4
+3> trunc(-4.3).
+-4
+4> round(-4.3).
+-4
+5> floor(3.5).
+3
+6> ceiling(3.5).
+4
+7> trunc(3.5).
+3
+8> round(3.5).
+4
+9> round(7).
+7
+
+The procedures all return integers.
+
+round/1 returns the closest integer to x, rounding to even when x is halfway between two integers. trunc/1 returns the integer closest to x whose absolute value is not larger than the absolute value of x. floor/1 returns the largest integer not larger than x. ceiling/1 returns the smallest integer not smaller than x.
+
+For the floor and ceiling functions implemented above, T will always be less than or equal to X. We just need to check if there is a difference between the two in which case we will either increase or decrease the truncation depending if we want to floor or ceiling X.
+
+(Correction to floor/1 and ceiling/1 to check for negative or positive values. 2009-11-21 seetho)
+
+Further general information on math and rounding is available from:
+
+MathWorld definition of the Floor Function. MathWorld definition of the Ceiling Function 
