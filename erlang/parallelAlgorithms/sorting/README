@@ -1,0 +1,6 @@
+This is an implementation of systolic array defined 
+in 'Parallel Algorithms and Architecture' by F. Thomson Leighton'
+Page 6. 
+I this implementation each process is implemented as a separate erlang node.
+There is a pomper node to pomp numbers to the first node.
+Nodes are in synch with microseconds approximation.
