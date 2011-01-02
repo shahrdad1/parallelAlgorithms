@@ -18,10 +18,11 @@ all: $(TARGETS)
 
 
 $(EBIN_DIR)/%.beam: $(SOURCE_DIR)/%.erl
-	erlc $(ERLC_OPTS) -pa $(EBIN_DIR) $<
+	mkdir $(EBIN_DIR);\
+	erlc $(ERLC_OPTS) -pa $(EBIN_DIR) $<;\
 
 run:all
 	$(ERL_CALL_VERBOSE) systolic_array run_from_make 10
 
 clean:
-	@rm -f $(EBIN_DIR)/*.beam
+	@rm -r -f $(EBIN_DIR)
