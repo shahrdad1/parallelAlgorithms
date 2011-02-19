@@ -1,41 +1,11 @@
 %% See Page #6 from Leighton
 
 -module(systolic_array).
--export([run_from_make/1,sort/5]).
+-export([sort/6]).
 -include("trace.hrl").
 
-run_from_make ([TimeInterval]) ->
-    {TI,_} = string:to_integer(atom_to_list(TimeInterval)),
-    run(TI).
 
-
-run(TimeInterval) ->
-
-    IODevice = open_log_file("./log/Systolic Array.log"),
-    register(pomper,self()),
-    register(firstNode, spawn(systolic_array,  sort, [IODevice,firstNode, {pomper,secondNode},-999,TimeInterval])),
-    register(secondNode,spawn(systolic_array,  sort, [IODevice,secondNode,{firstNode,thirdNode},-999,TimeInterval])),
-    register(thirdNode, spawn(systolic_array,  sort, [IODevice,thirdNode, {secondNode,forthNode},-999,TimeInterval])),
-    register(forthNode, spawn(systolic_array,  sort, [IODevice,forthNode, {thirdNode,fifthNode},-999,TimeInterval])),
-    register(fifthNode, spawn(systolic_array,  sort, [IODevice,fifthNode, {forthNode,nil},-999,TimeInterval])),
-
-    %% Pomp values to the first (leftmost) node:
-    firstNode ! {pomper,2},
-    firstNode ! {pomper,1},
-    firstNode ! {pomper,5},
-    firstNode ! {pomper,0},
-    firstNode ! {pomper,3},
-    
-    firstNode  ! {pomper,start},
-    secondNode ! {pomper,start},
-    thirdNode  ! {pomper,start},
-    forthNode  ! {pomper,start},
-    fifthNode  ! {pomper,start},
-
-    sleep(1000).
-
-
-read(IODevice,CurrentNode,{LeftNode,RightNode},StoredNumber, FailedReadsAcc)->
+read(Logger,CurrentNode,{LeftNode,RightNode},StoredNumber, FailedReadsAcc,DataPomper)->
 
 
     receive 
@@ -44,7 +14,7 @@ read(IODevice,CurrentNode,{LeftNode,RightNode},StoredNumber, FailedReadsAcc)->
 
 	{LeftNode,ReceivedNumber} when is_integer(ReceivedNumber)->
 
-	    ?Trace(IODevice,string_format(" Phase#1: ~w <== ~w from ~w",[CurrentNode,ReceivedNumber, LeftNode],?LINE)),
+	    Logger ! {info,?Log_Line("Phase#1: ~w <== ~w from ~w", [CurrentNode,ReceivedNumber, LeftNode],?LINE)},
 
 	    case StoredNumber of
 
@@ -55,12 +25,12 @@ read(IODevice,CurrentNode,{LeftNode,RightNode},StoredNumber, FailedReadsAcc)->
 		    %% Keep the smaller in the node and pass the bigger to the right node
 		    case StoredNumber < ReceivedNumber of 
 			true -> 
-			    ?Trace(IODevice,string_format(" Phase#1: ~w ==> ~w to ~w",[CurrentNode,ReceivedNumber, RightNode],?LINE)),
+			    Logger ! {info,?Log_Line("Phase#1: ~w ==> ~w to ~w", [CurrentNode,ReceivedNumber, RightNode],?LINE)},
 			    RightNode ! {CurrentNode,ReceivedNumber}, 
 			    {StoredNumber,0};
 
 			false ->
-			    ?Trace(IODevice,string_format(" Phase#1: ~w ==> ~w to ~w",[CurrentNode,StoredNumber, RightNode],?LINE)),
+			    Logger ! {info,?Log_Line("Phase#1: ~w ==> ~w to ~w", [CurrentNode,StoredNumber, RightNode],?LINE)},
 			    RightNode ! {CurrentNode,StoredNumber},
 			    {ReceivedNumber,0}
 		    end
@@ -68,20 +38,21 @@ read(IODevice,CurrentNode,{LeftNode,RightNode},StoredNumber, FailedReadsAcc)->
 
 	%% I had to put handler for stop here because this is the recieve statement that is waiting when stop message is sent
 
-	{pomper,stop} -> ?Trace(IODevice,string_format(" Phase#1: ~w locally stored Number is ~w",[CurrentNode,StoredNumber],?LINE)),
-			 stop;
-	
+	{{DataPomper,_NodeName},stop} -> 
+	    Logger ! {info,?Log_Line("Phase#1: ~w locally stored Number is ~w", [CurrentNode,StoredNumber],?LINE)},
+	    stop;
 
-	{_AnyOtherNode,Number}-> ?Trace(IODevice,string_format(" Phase#1: Message received from wrong Node: ~w <== ~w from ~w ",
-							       [CurrentNode,Number,_AnyOtherNode],?LINE))
+
+	{_AnyOtherNode,Number}-> 
+	    Logger ! {info,?Log_Line("Phase#1: Message received from wrong Node: ~w <== ~w from ~w ", [CurrentNode,Number,_AnyOtherNode],?LINE)}
 
     after 0 -> 
-	   {StoredNumber,FailedReadsAcc+1}
- 
+	    {StoredNumber,FailedReadsAcc+1}
+
     end.
 
 
-nodeClock (IODevice,CurrentNode,{LeftNode,RightNode}=Adjacents,StoredNumber,TimeInterval,FailedReadsAcc) ->
+nodeClock (Logger,CurrentNodeProcessName,{LeftNode,RightNode}=Adjacents,StoredNumber,TimeInterval,FailedReadsAcc,DataPomper) ->
 
     receive 
 
@@ -89,7 +60,7 @@ nodeClock (IODevice,CurrentNode,{LeftNode,RightNode}=Adjacents,StoredNumber,Time
     after 
 	TimeInterval ->
 
-	    {Value,NumberOfFailedReads} = read(IODevice,CurrentNode,Adjacents,StoredNumber,FailedReadsAcc),
+	    {Value,NumberOfFailedReads} = read(Logger,CurrentNodeProcessName,Adjacents,StoredNumber,FailedReadsAcc,DataPomper),
 
 	    case NumberOfFailedReads > 9 of
 
@@ -106,23 +77,25 @@ nodeClock (IODevice,CurrentNode,{LeftNode,RightNode}=Adjacents,StoredNumber,Time
 		    %% When a node receives -999, it should pass its local value to its left 
 		    %% node, saves -999 as its local value.
 		    %% The left most node prints its local value when it receives a value 
+
 		    %% from its right node, and substitute its local value with the recieved value
 		    %% until it receives -999 which means process is done.
 
-		    %% ?Trace(IODevice,string_format("~w locally stored Number is ~w",[CurrentNode,StoredNumber],?LINE)),
+		    %% ?Trace(IODevice,string_format("~w locally stored Number is ~w",[CurrentNodeProcessName,StoredNumber],?LINE)),
 
 		    case RightNode of
 
 			nil ->
 
-			    ?Trace(IODevice,string_format(" Phase#2: ~w ==> ~w to ~w",[CurrentNode,StoredNumber, LeftNode],?LINE)),
+			    Logger ! {info,?Log_Line("Phase#2: ~w ==> ~w to ~w",[CurrentNodeProcessName,StoredNumber, LeftNode],?LINE)},
+
 			    LeftNode ! StoredNumber,
 
 			    case StoredNumber=/=-999 of
 
 				%% When rightmost node's stored value is Not -999
 				true -> 
-				    nodeClock(IODevice,CurrentNode,Adjacents,-999,TimeInterval,NumberOfFailedReads);
+				    nodeClock(Logger,CurrentNodeProcessName,Adjacents,-999,TimeInterval,NumberOfFailedReads,DataPomper);
 
 				%% When rightmost node's stored value is -999
 				false -> stop
@@ -135,23 +108,29 @@ nodeClock (IODevice,CurrentNode,{LeftNode,RightNode}=Adjacents,StoredNumber,Time
 
 				-999->
 
-				    ?Trace(IODevice,string_format(" Phase#2: ~w <== ~w from ~w",[CurrentNode,-999, RightNode],?LINE)),
+				    Logger ! {info,?Log_Line("Phase#2: ~w <== ~w from ~w",[CurrentNodeProcessName,-999, RightNode],?LINE)},
+
 				    case LeftNode of
 
 					%% when leftmost node receives -999
-					pomper -> 
+					{DataPomper,_NodeName} -> 
 
-					    ?Trace(IODevice,string_format(" Phase#2: ~w outputs: ~w",[CurrentNode,StoredNumber],?LINE)),
+					    Logger ! {info,?Log_Line("Phase#2: ~w outputs: ~w",[CurrentNodeProcessName,StoredNumber],?LINE)},
+
 					    stop;
 
 					%% when a node in middle receives -999
 
 					_OtherLeftNode ->
 
-					    ?Trace(IODevice,string_format(" Phase#2: ~w ==> ~w to ~w",[CurrentNode,StoredNumber, LeftNode],?LINE)),
+					    Logger ! {info,?Log_Line("Phase#2: ~w ==> ~w to ~w",
+								     [CurrentNodeProcessName,StoredNumber, LeftNode],?LINE)},
+
 					    LeftNode ! StoredNumber,
 
-					    ?Trace(IODevice,string_format(" Phase#2: ~w ==> ~w to ~w",[CurrentNode,-999, LeftNode],?LINE)),
+					    Logger ! {info,?Log_Line("Phase#2: ~w ==> ~w to ~w",
+								     [CurrentNodeProcessName,-999, LeftNode],?LINE)},
+
 					    LeftNode ! -999,
 					    stop
 
@@ -160,27 +139,36 @@ nodeClock (IODevice,CurrentNode,{LeftNode,RightNode}=Adjacents,StoredNumber,Time
 
 				ValueToOutput->
 
-				    ?Trace(IODevice,string_format(" Phase#2: ~w <== ~w from ~w",[CurrentNode,ValueToOutput, RightNode],?LINE)),
+				    Logger ! {info,?Log_Line("Phase#2: ~w <== ~w from ~w",
+								     [CurrentNodeProcessName,ValueToOutput, RightNode],?LINE)},
 
 				    case LeftNode of
 
 					%% when leftmost node receives a value (other than -999) from its right node 
-					pomper ->
-					    ?Trace(IODevice,string_format(" Phase#2: ~w outputs: ~w",[CurrentNode,StoredNumber],?LINE)),
-					    nodeClock(IODevice,CurrentNode,Adjacents,ValueToOutput,TimeInterval,NumberOfFailedReads);
+					{DataPomper,_NodeName} ->
+
+
+					    Logger ! {info,?Log_Line("Phase#2: ~w outputs: ~w",
+								     [CurrentNodeProcessName,StoredNumber],?LINE)},
+
+					    nodeClock(Logger,CurrentNodeProcessName,Adjacents,ValueToOutput,
+						      TimeInterval,NumberOfFailedReads,DataPomper);
 
 
 					%% when a node in middle receives a value (other than -999) from its right node
 
        					_OtherLeftNode ->
-					    ?Trace(IODevice,string_format(" Phase#2: ~w ==> ~w to ~w",[CurrentNode,StoredNumber, LeftNode],?LINE)),
+
+					    Logger ! {info,?Log_Line("Phase#2: ~w ==> ~w to ~w",
+								     [CurrentNodeProcessName,StoredNumber, LeftNode],?LINE)},
+
 					    LeftNode ! StoredNumber,
-					    nodeClock(IODevice,CurrentNode,Adjacents,ValueToOutput,TimeInterval,NumberOfFailedReads)
+					    nodeClock(Logger,CurrentNodeProcessName,Adjacents,ValueToOutput,
+						      TimeInterval,NumberOfFailedReads,DataPomper)
 				    end
 
 			    after 0->
-				    %% ?Trace(IODevice,string_format(" Phase#2: ~w: Nothing to read!",[CurrentNode],?LINE)),
-				    nodeClock(IODevice,CurrentNode,Adjacents,StoredNumber,TimeInterval,NumberOfFailedReads)
+				    nodeClock(Logger,CurrentNodeProcessName,Adjacents,StoredNumber,TimeInterval,NumberOfFailedReads,DataPomper)
 
 			    end
 		    end;
@@ -189,7 +177,7 @@ nodeClock (IODevice,CurrentNode,{LeftNode,RightNode}=Adjacents,StoredNumber,Time
 
 		    case Value of 
 			stop->stop;
-			NewNumber -> nodeClock(IODevice,CurrentNode,Adjacents,NewNumber,TimeInterval,NumberOfFailedReads)
+			NewNumber -> nodeClock(Logger,CurrentNodeProcessName,Adjacents,NewNumber,TimeInterval,NumberOfFailedReads,DataPomper)
 
 		    end
 	    end
@@ -197,18 +185,27 @@ nodeClock (IODevice,CurrentNode,{LeftNode,RightNode}=Adjacents,StoredNumber,Time
 
 	    
 
-sort(IODevice,CurrentNode,Adjacents,StoredNumber,TimeInterval)->
+sort({LoggerProcessName,LoggerNode}=Logger,
+     {CurrentNode,CurrentProcessName}=CurrentNodeProcessName,
+     {LeftNodeProcessName,RightNodeProcessName}=Adjacents,
+     StoredNumber,TimeInterval,DataPomper)->
 
     %% This causes no node start reading data before all data is ready.
+    register(CurrentNode,self()),
+
+    Logger ! {info,?Log_Line("Pid: ~w is Registered under the name:~w",[self(),CurrentProcessName],?LINE)},
 
     receive
-	{pomper,start}->
+	{{DataPomper,_NodeName}=Master,start}->
 
-	    ?Trace(IODevice,string_format(" Phase#1: ~w is starting... ",[CurrentNode],?LINE)),
+	    Logger ! {info,?Log_Line("Phase#1: ~w with node ~w on its left and node ~w on its right is starting . . .",
+				     [CurrentNodeProcessName,LeftNodeProcessName,RightNodeProcessName],?LINE)},
 
-	    case nodeClock(IODevice,CurrentNode,Adjacents,StoredNumber,TimeInterval,0) of
+	    case nodeClock(Logger,CurrentNodeProcessName,Adjacents,StoredNumber,TimeInterval,0,DataPomper) of
 
-		stop -> ?Trace(IODevice,string_format("~w is stopping ....",[CurrentNode],?LINE)),
+		stop -> 
+		    Logger ! {info,?Log_Line("~w is stopping . . . ",[CurrentNodeProcessName],?LINE)},
+
 	        void
 	    end
     end.
@@ -218,5 +215,3 @@ sleep(T)->
     receive
     after T -> void
     end.
-
-
