@@ -1,0 +1,4 @@
+<h2> First test with EHTML </h2>
+<erl>
+out(Request)->extract_header:extract(Request).
+</erl>

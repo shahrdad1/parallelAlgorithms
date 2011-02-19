@@ -1,0 +1,3 @@
+-module(extract_header).
+-export([extract/1]).
+
